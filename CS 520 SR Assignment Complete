@@ -1,0 +1,42 @@
+resource barrier()
+#number of processes
+  const N := 4
+  var count := 0
+  var coins := 0
+  var total: real := 0
+  var ct: int
+  var x: real
+  #counter to signal last process
+  #continue allows for all processes to play, and all initially set to 0.
+  sem mutex := 1, continue[N] := ([N] 0), done := 0
+  write("Four children have 10 quarters each")
+  write("they inefficiently run back and fourth throwing 1 quarter in a bucket each time")
+  process worker(i := 1 to N)
+    fa j := 1 to 9 ->
+    coins := coins + 1;
+    total := coins * 0.25;
+    write("child ", i ," has added a coin");
+    write("there are now ", coins ," and a total of $", total," dollars");
+    x := random();
+    ct:= int(x*500 + 500);
+    nap(ct)
+    af
+    V(done)
+    #enter critical section
+    P(mutex)
+      write("child ", i ," has added nine coins and is waiting for the others to finish")
+      #decrements done back to zero so prog can move on to next fa.
+      count := count + 1
+    V(mutex)
+    if count = 4 ->
+    write("all children have added 9 of there coins")
+    fa w := 1 to N -> P(done) af;
+    fa w := 1 to N  -> V(continue[w]) af
+    fi
+    P(continue[i])
+    coins := coins + 1;
+    total := coins * 0.25;
+    write("child ", i ," has added a coin");
+    write("there are now ", coins ," and a total of $", total," dollars");
+  end
+end
